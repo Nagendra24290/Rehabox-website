@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Dashboard</title>
+    <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">Patient Portal</div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h2>Patients List</h2>
+            <div class="scroll-box">
+                {% if Post %}
+                    {% for i in Post %}
+                        <button class="patient-btn" onclick="showPatientDetails('{{ i.name }}', '{{ i.age }}', '{{ i.gender }}', '{{ i.condition }}', '{{ i.last_treatment }}')">
+                            {{ i.name }}
+                        </button>
+                    {% endfor %}
+                {% else %}
+                    No patient data available.
+                {% endif %}
+            </div>
+
+            <h2>Doctor Schedules</h2>
+            <div class="scroll-box">
+                <p><strong>Dr. Simran</strong> - 9:00 AM - 12:00 PM</p>
+                <p><strong>Dr. Antar</strong> - 1:00 PM - 4:00 PM</p>
+            </div>
+
+            <h2>Treatment Analytics</h2>
+            <div class="scroll-box">
+                <button class="treatment-btn" onclick="fetchThingSpeakData('Locking System')">Locking System</button>
+                <button class="treatment-btn" onclick="fetchThingSpeakData('Gripping')">Gripping</button>
+                <button class="treatment-btn" onclick="fetchThingSpeakData('Supinator')">Supinator</button>
+                <button class="treatment-btn" onclick="fetchThingSpeakData('Plugging')">Plugging</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>Overview</h2>
+            <canvas id="chartCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        const THINGSPEAK_API_URL = "GET https://api.thingspeak.com/channels/2842354/feeds.json?api_key=3OMZNWRQDJ2QSQBF&results=2";
+        
+        function showPatientDetails(name, age, gender, condition, last_treatment) {
+            alert(`Patient: ${name}\nAge: ${age}\nGender: ${gender}\nCondition: ${condition}\nLast Treatment: ${last_treatment}`);
+        }
+
+        function fetchThingSpeakData(treatmentType) {
+            fetch(THINGSPEAK_API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    const treatmentData = data.feeds.map(entry => parseInt(entry.field1));
+                    updateChart(treatmentType, treatmentData);
+                })
+                .catch(error => console.error("Error fetching data from ThingSpeak:", error));
+        }
+
+        function updateChart(treatmentType, treatmentData) {
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            const timeLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'];
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: `${treatmentType} Progress`,
+                        data: treatmentData,
+                        borderColor: 'blue',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
